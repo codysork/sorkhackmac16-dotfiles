@@ -2,6 +2,10 @@
 *
 
 # But not these files...
+## User Home Direcotry
 !.gitignore
-!/.dwm/autostart.sh
 !README.md
+## dwm scriptsd
+!/.dwm/autostart.sh
+## .config
+!/.config/nvim/
