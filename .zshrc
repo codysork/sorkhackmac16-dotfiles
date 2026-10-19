@@ -14,7 +14,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="robbyrussell"
+#ZSH_THEME="RobbyRussell"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -86,15 +86,14 @@ source $ZSH/oh-my-zsh.sh
 # Zoxide
 eval "$(zoxide init zsh)"
 
-export TODO_FILE="$HOME/Sync/Todo/todo.txt"
-
 # Aliases
 alias todo='todo.sh -d ~/.todo.cfg'
 alias todoedit="nvim ${TODO_FILE}"
 alias vim='nvim'
-alias nvim-ide='nvim -c "IDE"'
 
 eval $(thefuck --alias)
+eval "$(starship init zsh)"
 
 # Local secrets (not tracked)
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+
