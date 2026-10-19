@@ -1,4 +1,5 @@
 # User Home Folder
+## Files
 .Xauthority
 .bash_history
 .bash_logout
@@ -8,15 +9,16 @@
 .gitconfig
 .shell.pre-oh-my-zsh
 .wget-hsts
+.zcompdump*
 .zsh_history
-
-# Ingored directories
+## Directories
 .cache/
 .local/
 .oh-my-zsh/
-.supermaven/
 .ssh/
+.supermaven/
 @Install/
+Nextcloud/
 Scripts/
 Suckless/
 Sync/
@@ -32,6 +34,7 @@ Sync/
 .config/autostart/
 .config/dconf/
 .config/gedit/
+.config/gtk-3.0/
 .config/hardinfo2/
 .config/htop/
 .config/keepassxc/
