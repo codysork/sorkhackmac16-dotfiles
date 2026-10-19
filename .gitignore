@@ -32,6 +32,7 @@ Sync/
 .config/BraveSoftware/
 .config/Nextcloud/
 .config/autostart/
+.config/calcurse/
 .config/dconf/
 .config/gedit/
 .config/gtk-3.0/
