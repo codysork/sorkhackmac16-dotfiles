@@ -13,6 +13,15 @@ else
     exec dwmblocks
 fi
 
+# Conky
+#-------
+if [ $(pgrep conky) ]; then
+    echo "[INFO] conky is already running."
+else
+    echo "[INFO] Starting conky..."
+    conky -c ~/.config/conky/conky.conf &
+fi
+
 # System maintenance scripts
 #----------------------------
 if [[ $(sudo system-maintenance-check.sh) ]]; then
