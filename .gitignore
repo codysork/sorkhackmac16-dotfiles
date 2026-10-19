@@ -5,15 +5,20 @@
 .bash_profile
 .bashrc
 .fehbg
+.gitconfig
 .shell.pre-oh-my-zsh
 .wget-hsts
 .zsh_history
 
 # Ingored directories
 .cache/
+.local/
 .oh-my-zsh/
 .supermaven/
+.ssh/
 @Install/
 Scripts/
 Suckless/
 Sync/
+
+# Ignored in .config
