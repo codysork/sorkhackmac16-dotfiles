@@ -8,12 +8,21 @@
 # Check if dwmblocks is already running
 if [ $(pgrep dwmblocks) ]; then
     echo "[INFO] dwmblocks is already running."
-else 
-    exec dwmblocks &
+else
+    echo "[INFO] Starting dwmblocks..."
+    exec dwmblocks
 fi
 
 # System maintenance scripts
-if [[ $(system-maintenance-check.sh) -eq 0 ]]; then
+#----------------------------
+if [[ $(sudo system-maintenance-check.sh) ]]; then
+    
+    # Run maintenance scripts here
+    #------------------------------
     exec check-failed-services.sh
     exec sudo update-reminder.sh
+
+else
+    echo "[INFO] System maintenance checks failed."
 fi
+
