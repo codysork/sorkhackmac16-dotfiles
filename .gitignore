@@ -22,3 +22,20 @@ Suckless/
 Sync/
 
 # Ignored in .config
+## Files
+.config/QtProject.conf
+.config/mimeapps.list
+.config/pavucontrol.ini
+## Directories
+.config/BraveSoftware/
+.config/Nextcloud/
+.config/autostart/
+.config/dconf/
+.config/gedit/
+.config/hardinfo2/
+.config/htop/
+.config/keepassxc/
+.config/pulse/
+.config/systemd/
+.config/thefuck/
+.config/vesktop/
