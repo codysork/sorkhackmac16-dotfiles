@@ -8,4 +8,5 @@
 ## dwm scriptsd
 !/.dwm/autostart.sh
 ## .config
+!/.config/
 !/.config/nvim/
