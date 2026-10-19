@@ -1,0 +1,19 @@
+# User Home Folder
+.Xauthority
+.bash_history
+.bash_logout
+.bash_profile
+.bashrc
+.fehbg
+.shell.pre-oh-my-zsh
+.wget-hsts
+.zsh_history
+
+# Ingored directories
+.cache/
+.oh-my-zsh/
+.supermaven/
+@Install/
+Scripts/
+Suckless/
+Sync/
