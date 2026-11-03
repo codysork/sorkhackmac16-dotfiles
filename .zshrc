@@ -82,6 +82,7 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
+export TODO_FILE="~/Sync/Todo/todo.txt"
 
 # Zoxide
 eval "$(zoxide init zsh)"
