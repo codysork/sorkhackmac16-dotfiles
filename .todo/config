@@ -1,7 +1,8 @@
+#!env sh
 # @file config (for todo.sh)
 # @author Cody Sork <codysork@gmail.com>
 # @created 2026-10-19
-# @modified 2026-10-19
+# @modified 2026-10-20
 # @description Configuration file for todo.sh
 
 # === EDIT FILE LOCATIONS BELOW ===
