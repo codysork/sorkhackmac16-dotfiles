@@ -2,36 +2,38 @@
 # @file autostart.sh
 # @author Cody Sork <codysork@gmail.com>
 # @created 2026-10-18
-# @modified 2026-10-19
+# @modified 2026-10-31
 # @description This script is run when dwm starts up.
 
-# Check if dwmblocks is already running
+#------------------------------------------------------------------------------
+# dwmblocks
+#------------------------------------------------------------------------------
 if [ $(pgrep dwmblocks) ]; then
     echo "[INFO] dwmblocks is already running."
 else
     echo "[INFO] Starting dwmblocks..."
-    exec dwmblocks
+    exec dwmblocks &
 fi
 
+#-----------------------------------------------------------------------------
 # Conky
-#-------
+#-----------------------------------------------------------------------------
 if [ $(pgrep conky) ]; then
     echo "[INFO] conky is already running."
 else
     echo "[INFO] Starting conky..."
-    conky -c ~/.config/conky/conky.conf &
+    exec conky -c ~/.config/conky/conky-top-left.conf &
+    exec conky -c ~/.config/conky/conky-bottom-left.conf &
+    exec conky -c ~/.config/conky/conky-right.conf &
 fi
 
-# System maintenance scripts
-#----------------------------
-if [[ $(sudo system-maintenance-check.sh) ]]; then
-    
-    # Run maintenance scripts here
-    #------------------------------
-    exec check-failed-services.sh
-    exec sudo update-reminder.sh
+#-----------------------------------------------------------------------------
+# Maintenance Reminder
+#-----------------------------------------------------------------------------
 
+if [ $(pgrep maintenance-reminder) ]; then
+    echo "[INFO] maintenance-reminder is already running."
 else
-    echo "[INFO] System maintenance checks failed."
+    echo "[INFO] Starting maintenance-reminder..."
+    exec maintenance-reminder.sh &
 fi
-
