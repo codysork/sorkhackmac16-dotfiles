@@ -7,39 +7,33 @@
 .bashrc
 .fehbg
 .gitconfig
+.pulse-cookie
 .shell.pre-oh-my-zsh
+.steampath
+.steampid
 .wget-hsts
 .zcompdump*
 .zsh_history
+
 ## Directories
 .cache/
+.cargo/
+.codeium/
+.config/
+.gnupg/
 .local/
+.minetest/
 .oh-my-zsh/
+.pki/
+.rustup/
 .ssh/
+.steam/
 .supermaven/
 @Install/
+Code/
+Downloads/
 Nextcloud/
+Pictures/
 Scripts/
 Suckless/
 Sync/
-
-# Ignored in .config
-## Files
-.config/QtProject.conf
-.config/mimeapps.list
-.config/pavucontrol.ini
-## Directories
-.config/BraveSoftware/
-.config/Nextcloud/
-.config/autostart/
-.config/calcurse/
-.config/dconf/
-.config/gedit/
-.config/gtk-3.0/
-.config/hardinfo2/
-.config/htop/
-.config/keepassxc/
-.config/pulse/
-.config/systemd/
-.config/thefuck/
-.config/vesktop/
