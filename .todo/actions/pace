@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+#
+# @file pace
+# @author Cody Sork <codysork@gmail.com> with help from ChatGPT
+# @created 2026-11-04
+# @modified 2026-11-04
+# @description Calculate monthly story-point velocity.
+
+set -euo pipefail
+
+# Configuration
+DONE_FILE="${DONE_FILE:-${TODO_DIR:-$HOME}/done.txt}"
+MONTHS=12
+
+# Dependencies
+for cmd in date awk; do
+    command -v "$cmd" >/dev/null 2>&1 || {
+        echo "Error: Required command '$cmd' not found." >&2
+        exit 1
+    }
+done
+
+# Validate done.txt
+if [[ ! -f "$DONE_FILE" || ! -r "$DONE_FILE" ]]; then
+    echo "Error: Cannot read done file: $DONE_FILE" >&2
+    exit 1
+fi
+
+# Current month
+CURRENT_MONTH=$(date +%Y-%m-01)
+
+# Output header
+printf '\n'
+printf '%-12s %10s %8s %12s\n' \
+    "Month" "Points" "Days" "Velocity"
+printf '%-12s %10s %8s %12s\n' \
+    "------------" "----------" "--------" "------------"
+
+# Calculate each month's velocity
+for ((i = MONTHS - 1; i >= 0; i--)); do
+
+    MONTH_START=$(date -d "$CURRENT_MONTH - $i months" +%Y-%m-01)
+    NEXT_MONTH=$(date -d "$MONTH_START + 1 month" +%Y-%m-01)
+
+    MONTH_KEY=${MONTH_START:0:7}
+    MONTH_LABEL=$(date -d "$MONTH_START" '+%b %Y')
+
+    # Current month uses elapsed days.
+    # Previous months use their full calendar length.
+    if (( i == 0 )); then
+        DAYS=$(date +%-d)
+    else
+        DAYS=$(date -d "$NEXT_MONTH - 1 day" +%-d)
+    fi
+
+    # Sum story points for tasks completed during this month.
+    POINTS=$(awk -v month="$MONTH_KEY" '
+        $1 == "x" && substr($2, 1, 7) == month {
+            for (i = 3; i <= NF; i++) {
+                if ($i ~ /^sp:[0-9]+([.][0-9]+)?$/) {
+                    sum += substr($i, 4)
+                    break
+                }
+            }
+        }
+        END {
+            printf "%.2f", sum
+        }
+    ' "$DONE_FILE")
+
+    # Calculate average points per calendar day.
+    VELOCITY=$(awk -v points="$POINTS" -v days="$DAYS" \
+        'BEGIN { printf "%.2f", points / days }')
+
+    printf '%-12s %10s %8s %12s\n' \
+        "$MONTH_LABEL" "$POINTS" "$DAYS" "$VELOCITY"
+
+done
+
+printf '\n'
+
