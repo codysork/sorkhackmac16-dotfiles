@@ -108,6 +108,7 @@ days_between() {
 
 # Print the report header.
 print_header() {
+    echo
     printf "%-23s %10s %10s %10s %8s %10s\n" \
         "Period" "Hassle" "Uplift" "Stress" "Days" "Stress/day"
 
