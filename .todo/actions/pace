@@ -5,12 +5,104 @@
 # @created 2026-11-04
 # @modified 2026-11-04
 # @description Calculate monthly story-point velocity.
+# Usage:
+#   todo.sh pace [daily|weekly|monthly|annual]
 
 set -euo pipefail
 
+#----------------------------------------------------------------------------
 # Configuration
+#----------------------------------------------------------------------------
+
 DONE_FILE="${DONE_FILE:-${TODO_DIR:-$HOME}/done.txt}"
-MONTHS=12
+TODAY=$(date +%Y-%m-%d)
+
+#----------------------------------------------------------------------------
+# Functions
+#----------------------------------------------------------------------------
+
+usage() {
+    echo "Usage: todo.sh pace [daily|weekly|monthly|annual]"
+}
+
+# Sum story points completed within a date range.
+sum_points() {
+    local start="$1"
+    local end="$2"
+
+    awk -v start="$start" -v end="$end" '
+        $1 == "x" && $2 >= start && $2 <= end {
+            for (i = 3; i <= NF; i++) {
+                if ($i ~ /^sp:[0-9]+([.][0-9]+)?$/) {
+                    sum += substr($i, 4)
+                    break
+                }
+            }
+        }
+        END {
+            printf "%.2f", sum
+        }
+    ' "$DONE_FILE"
+}
+
+# Calculate inclusive calendar days between two dates.
+days_between() {
+    local start="$1"
+    local end="$2"
+
+    echo $(( (
+        $(date -d "$end" +%s) -
+        $(date -d "$start" +%s)
+    ) / 86400 + 1 ))
+}
+
+# Print report header.
+echo
+printf '%-16s %10s %8s %12s\n' \
+    "Period" "Points" "Days" "SP/day"
+printf '%-16s %10s %8s %12s\n' \
+    "----------------" "----------" "--------" "------------"
+
+# Generate a report row.
+report_period() {
+    local label="$1"
+    local start="$2"
+    local end="$3"
+
+    local days
+    local points
+    local velocity
+
+    days=$(days_between "$start" "$end")
+    points=$(sum_points "$start" "$end")
+
+    velocity=$(awk -v points="$points" -v days="$days" \
+        'BEGIN { printf "%.2f", points / days }')
+
+    printf '%-16s %10s %8s %12s\n' \
+        "$label" "$points" "$days" "$velocity"
+}
+
+#----------------------------------------------------------------------------
+# Main
+#----------------------------------------------------------------------------
+
+# Validate arguments
+MODE="${2:-monthly}"
+
+case "$MODE" in
+    daily|weekly|monthly|annual|yearly)
+        ;;
+    -h|--help|help)
+        echo "Usage: todo.sh pace [daily|weekly|monthly|annual]"
+        exit 0
+        ;;
+    *)
+        echo "Error: Invalid pace mode '$MODE'." >&2
+        echo "Usage: todo.sh pace [daily|weekly|monthly|annual]" >&2
+        exit 1
+        ;;
+esac
 
 # Dependencies
 for cmd in date awk; do
@@ -26,56 +118,77 @@ if [[ ! -f "$DONE_FILE" || ! -r "$DONE_FILE" ]]; then
     exit 1
 fi
 
-# Current month
-CURRENT_MONTH=$(date +%Y-%m-01)
+case "$MODE" in
 
-# Output header
-printf '\n'
-printf '%-12s %10s %8s %12s\n' \
-    "Month" "Points" "Days" "Velocity"
-printf '%-12s %10s %8s %12s\n' \
-    "------------" "----------" "--------" "------------"
+    # Daily: Last 30 days
+    daily)
+        for ((i = 29; i >= 0; i--)); do
+            START=$(date -d "$TODAY - $i days" +%Y-%m-%d)
+            LABEL=$(date -d "$START" '+%Y-%m-%d')
 
-# Calculate each month's velocity
-for ((i = MONTHS - 1; i >= 0; i--)); do
+            report_period "$LABEL" "$START" "$START"
+        done
+        ;;
 
-    MONTH_START=$(date -d "$CURRENT_MONTH - $i months" +%Y-%m-01)
-    NEXT_MONTH=$(date -d "$MONTH_START + 1 month" +%Y-%m-01)
+    # Weekly: Last 52 weeks
+    weekly)
+        DOW=$(date -d "$TODAY" +%u)
+        CURRENT_WEEK=$(date -d "$TODAY - $((DOW - 1)) days" +%Y-%m-%d)
 
-    MONTH_KEY=${MONTH_START:0:7}
-    MONTH_LABEL=$(date -d "$MONTH_START" '+%b %Y')
+        for ((i = 51; i >= 0; i--)); do
+            START=$(date -d "$CURRENT_WEEK - $i weeks" +%Y-%m-%d)
+            END=$(date -d "$START + 6 days" +%Y-%m-%d)
 
-    # Current month uses elapsed days.
-    # Previous months use their full calendar length.
-    if (( i == 0 )); then
-        DAYS=$(date +%-d)
-    else
-        DAYS=$(date -d "$NEXT_MONTH - 1 day" +%-d)
-    fi
+            # Do not include future days in the current week.
+            if [[ "$END" > "$TODAY" ]]; then
+                END="$TODAY"
+            fi
 
-    # Sum story points for tasks completed during this month.
-    POINTS=$(awk -v month="$MONTH_KEY" '
-        $1 == "x" && substr($2, 1, 7) == month {
-            for (i = 3; i <= NF; i++) {
-                if ($i ~ /^sp:[0-9]+([.][0-9]+)?$/) {
-                    sum += substr($i, 4)
-                    break
-                }
-            }
-        }
-        END {
-            printf "%.2f", sum
-        }
-    ' "$DONE_FILE")
+            LABEL=$(date -d "$START" '+%G-W%V')
 
-    # Calculate average points per calendar day.
-    VELOCITY=$(awk -v points="$POINTS" -v days="$DAYS" \
-        'BEGIN { printf "%.2f", points / days }')
+            report_period "$LABEL" "$START" "$END"
+        done
+        ;;
 
-    printf '%-12s %10s %8s %12s\n' \
-        "$MONTH_LABEL" "$POINTS" "$DAYS" "$VELOCITY"
+    # Monthly: Last 12 months
+    monthly)
+        CURRENT_MONTH=$(date -d "$TODAY" +%Y-%m-01)
 
-done
+        for ((i = 11; i >= 0; i--)); do
+            START=$(date -d "$CURRENT_MONTH - $i months" +%Y-%m-%d)
+            NEXT_MONTH=$(date -d "$START + 1 month" +%Y-%m-%d)
+            END=$(date -d "$NEXT_MONTH - 1 day" +%Y-%m-%d)
 
-printf '\n'
+            if [[ "$END" > "$TODAY" ]]; then
+                END="$TODAY"
+            fi
+
+            LABEL=$(date -d "$START" '+%b %Y')
+
+            report_period "$LABEL" "$START" "$END"
+        done
+        ;;
+
+    # Annual: Last 10 years
+    annual|yearly)
+        CURRENT_YEAR=$(date -d "$TODAY" +%Y-01-01)
+
+        for ((i = 9; i >= 0; i--)); do
+            START=$(date -d "$CURRENT_YEAR - $i years" +%Y-%m-%d)
+            NEXT_YEAR=$(date -d "$START + 1 year" +%Y-%m-%d)
+            END=$(date -d "$NEXT_YEAR - 1 day" +%Y-%m-%d)
+
+            if [[ "$END" > "$TODAY" ]]; then
+                END="$TODAY"
+            fi
+
+            LABEL=$(date -d "$START" '+%Y')
+
+            report_period "$LABEL" "$START" "$END"
+        done
+        ;;
+
+esac
+
+echo
 
