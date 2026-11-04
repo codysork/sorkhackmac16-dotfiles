@@ -1,12 +1,14 @@
+
 #!/usr/bin/env bash
 #
 # @file pace (todo.sh action)
 # @author Cody Sork <codysork@gmail.com> with help from ChatGPT
 # @created 2026-11-04
 # @modified 2026-11-04
-# @description Calculate monthly story-point velocity.
+# @description Calculate story-point velocity.
+#
 # Usage:
-#   todo.sh pace [daily|weekly|monthly|annual]
+#   todo.sh pace [daily|weekly|monthly|annual] [count]
 
 set -euo pipefail
 
@@ -22,7 +24,7 @@ TODAY=$(date +%Y-%m-%d)
 #----------------------------------------------------------------------------
 
 usage() {
-    echo "Usage: todo.sh pace [daily|weekly|monthly|annual]"
+    echo "Usage: todo.sh pace [daily|weekly|monthly|annual] [count]"
 }
 
 # Sum story points completed within a date range.
@@ -57,11 +59,13 @@ days_between() {
 }
 
 # Print report header.
-echo
-printf '%-16s %10s %8s %12s\n' \
-    "Period" "Points" "Days" "SP/day"
-printf '%-16s %10s %8s %12s\n' \
-    "----------------" "----------" "--------" "------------"
+print_header() {
+    echo
+    printf '%-16s %10s %8s %12s\n' \
+        "Period" "Points" "Days" "SP/day"
+    printf '%-16s %10s %8s %12s\n' \
+        "----------------" "----------" "--------" "------------"
+}
 
 # Generate a report row.
 report_period() {
@@ -87,24 +91,44 @@ report_period() {
 # Main
 #----------------------------------------------------------------------------
 
-# Validate arguments
+# Validate arguments.
 MODE="${2:-monthly}"
+COUNT="${3:-}"
 
 case "$MODE" in
     daily|weekly|monthly|annual|yearly)
         ;;
     -h|--help|help)
-        echo "Usage: todo.sh pace [daily|weekly|monthly|annual]"
+        usage
         exit 0
         ;;
     *)
         echo "Error: Invalid pace mode '$MODE'." >&2
-        echo "Usage: todo.sh pace [daily|weekly|monthly|annual]" >&2
+        usage >&2
         exit 1
         ;;
 esac
 
-# Dependencies
+# Set default period count.
+if [[ -z "$COUNT" ]]; then
+    case "$MODE" in
+        daily)          COUNT=30 ;;
+        weekly)         COUNT=52 ;;
+        monthly)        COUNT=12 ;;
+        annual|yearly)  COUNT=10 ;;
+    esac
+fi
+
+# Validate period count.
+if [[ ! "$COUNT" =~ ^[0-9]+$ ]] || (( 10#$COUNT == 0 )); then
+    echo "Error: Count must be a positive integer." >&2
+    usage >&2
+    exit 1
+fi
+
+COUNT=$((10#$COUNT))
+
+# Dependencies.
 for cmd in date awk; do
     command -v "$cmd" >/dev/null 2>&1 || {
         echo "Error: Required command '$cmd' not found." >&2
@@ -112,17 +136,20 @@ for cmd in date awk; do
     }
 done
 
-# Validate done.txt
+# Validate done.txt.
 if [[ ! -f "$DONE_FILE" || ! -r "$DONE_FILE" ]]; then
     echo "Error: Cannot read done file: $DONE_FILE" >&2
     exit 1
 fi
 
+# Print report header.
+print_header
+
 case "$MODE" in
 
-    # Daily: Last 30 days
+    # Daily: Last N days.
     daily)
-        for ((i = 29; i >= 0; i--)); do
+        for ((i = COUNT - 1; i >= 0; i--)); do
             START=$(date -d "$TODAY - $i days" +%Y-%m-%d)
             LABEL=$(date -d "$START" '+%Y-%m-%d')
 
@@ -130,12 +157,12 @@ case "$MODE" in
         done
         ;;
 
-    # Weekly: Last 52 weeks
+    # Weekly: Last N weeks.
     weekly)
         DOW=$(date -d "$TODAY" +%u)
         CURRENT_WEEK=$(date -d "$TODAY - $((DOW - 1)) days" +%Y-%m-%d)
 
-        for ((i = 51; i >= 0; i--)); do
+        for ((i = COUNT - 1; i >= 0; i--)); do
             START=$(date -d "$CURRENT_WEEK - $i weeks" +%Y-%m-%d)
             END=$(date -d "$START + 6 days" +%Y-%m-%d)
 
@@ -150,11 +177,11 @@ case "$MODE" in
         done
         ;;
 
-    # Monthly: Last 12 months
+    # Monthly: Last N months.
     monthly)
         CURRENT_MONTH=$(date -d "$TODAY" +%Y-%m-01)
 
-        for ((i = 11; i >= 0; i--)); do
+        for ((i = COUNT - 1; i >= 0; i--)); do
             START=$(date -d "$CURRENT_MONTH - $i months" +%Y-%m-%d)
             NEXT_MONTH=$(date -d "$START + 1 month" +%Y-%m-%d)
             END=$(date -d "$NEXT_MONTH - 1 day" +%Y-%m-%d)
@@ -169,11 +196,11 @@ case "$MODE" in
         done
         ;;
 
-    # Annual: Last 10 years
+    # Annual: Last N years.
     annual|yearly)
         CURRENT_YEAR=$(date -d "$TODAY" +%Y-01-01)
 
-        for ((i = 9; i >= 0; i--)); do
+        for ((i = COUNT - 1; i >= 0; i--)); do
             START=$(date -d "$CURRENT_YEAR - $i years" +%Y-%m-%d)
             NEXT_YEAR=$(date -d "$START + 1 year" +%Y-%m-%d)
             END=$(date -d "$NEXT_YEAR - 1 day" +%Y-%m-%d)
