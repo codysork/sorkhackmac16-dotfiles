@@ -96,7 +96,7 @@ MODE="${2:-monthly}"
 COUNT="${3:-}"
 
 case "$MODE" in
-    daily|weekly|monthly|annual|yearly)
+    day|daily|week|weekly|month|monthly|annual|year|yearly)
         ;;
     -h|--help|help)
         usage
@@ -148,7 +148,7 @@ print_header
 case "$MODE" in
 
     # Daily: Last N days.
-    daily)
+    day|daily)
         for ((i = COUNT - 1; i >= 0; i--)); do
             START=$(date -d "$TODAY - $i days" +%Y-%m-%d)
             LABEL=$(date -d "$START" '+%Y-%m-%d')
@@ -158,7 +158,7 @@ case "$MODE" in
         ;;
 
     # Weekly: Last N weeks.
-    weekly)
+    week|weekly)
         DOW=$(date -d "$TODAY" +%u)
         CURRENT_WEEK=$(date -d "$TODAY - $((DOW - 1)) days" +%Y-%m-%d)
 
@@ -178,7 +178,7 @@ case "$MODE" in
         ;;
 
     # Monthly: Last N months.
-    monthly)
+    month|monthly)
         CURRENT_MONTH=$(date -d "$TODAY" +%Y-%m-01)
 
         for ((i = COUNT - 1; i >= 0; i--)); do
@@ -197,7 +197,7 @@ case "$MODE" in
         ;;
 
     # Annual: Last N years.
-    annual|yearly)
+    annual|year|yearly)
         CURRENT_YEAR=$(date -d "$TODAY" +%Y-01-01)
 
         for ((i = COUNT - 1; i >= 0; i--)); do
