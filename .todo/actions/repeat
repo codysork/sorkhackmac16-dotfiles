@@ -1,59 +1,84 @@
+
 #!/bin/bash
+#
+# @file repeat (todo.sh action)
+# @author Mark D. White (edited by Cody Sork <codysork@gmail.com> with help from ChatGPT)
+# @created 2011-11-16
+# @modified 2026-11-05
+# @description An addon command for todo.txt-cli that marks an item done and 
+#              immediately re-enters it.
 
 action=$1
 shift
 
 function usage {
-  echo " Customized repeat:"
-  echo "   repeat ITEM "
-  echo "     mark an item complete then re-enter it"
-  echo "   repeat ITEM DAYS"
-  echo "     mark an item as complete then re-enter it with a date DAYS from now"
-  echo "   repeat ITEM +DAYS"
-  echo "     mark an item with a date as complete then re-enter it with a date DAYS from the due date"
-  echo ""
-  exit
+    echo " Customized repeat:"
+    echo "   repeat ITEM"
+    echo "     mark an item complete then re-enter it"
+    echo "   repeat ITEM DAYS"
+    echo "     mark an item complete then re-enter it with a date DAYS from now"
+    echo "   repeat ITEM +DAYS"
+    echo "     mark an item with a date complete then re-enter it with a date DAYS from the due date"
+    echo ""
+    exit
 }
 
 [ "$action" = "usage" ] && usage
 
-# make sure we have an item number
+# Make sure we have an item number
 ITEM=$1
+
 if ! [[ "$ITEM" =~ ^[0-9]+$ ]]; then
-echo "Error! Usage:"
-usage
-exit
+    echo "Error! Usage:"
+    usage
 fi
 
-# pull the line from the todo file
+# Pull the line from the todo file
 LINE=$(sed "$ITEM!d" "$TODO_FILE")
 
-if [[ "$LINE" =~ ^\([A-Z]\) ]]; then
-LINE=$(echo "$LINE" | cut -f2- -d ' ') # cut off the priority
+# Preserve priority
+PRIORITY=""
+
+if [[ "$LINE" == \([A-Z]\)\ * ]]; then
+    PRIORITY=${LINE:1:1}
+    LINE=${LINE:4}
 fi
 
-if [[ "$LINE" =~ ^[0-9][0-9][0-9][0-9] ]]; then
-    DATE=$(echo "$LINE" | cut -f1 -d ' ') # identify the date
-    LINE=$(echo "$LINE" | cut -f2- -d ' ') # cut off the date
-else 
+# Identify and remove the date
+if [[ "$LINE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\  ]]; then
+    DATE=${LINE%% *}
+    LINE=${LINE#* }
+else
     DATE=""
 fi
 
+# Process optional DAYS argument
 DAYS=$2
-if [[ "$DAYS" != "" ]]; then  
-    if [[ $DAYS == \+* ]]; then
-        if [[ "$DATE" != "" ]]; then  
-            # increase the due date
-            DATE=`date -d $DATE" "$DAYS" days" +%Y-%m-%d`
-	fi
-    elif [[ $DAYS == [0-9]* ]]; then
-        # make new date relative from now
-        DATE=`date -d $DAYS" days" +%Y-%m-%d`
+
+if [[ "$DAYS" != "" ]]; then
+    if [[ "$DAYS" == +* ]]; then
+        if [[ "$DATE" != "" ]]; then
+            # Increase the due date
+            DATE=$(date -d "$DATE $DAYS days" +%Y-%m-%d)
+        fi
+    elif [[ "$DAYS" =~ ^[0-9]+$ ]]; then
+        # Make new date relative from now
+        DATE=$(date -d "$DAYS days" +%Y-%m-%d)
     fi
-    LINE=$DATE" "$LINE # and append to the line
+
+    if [[ "$DATE" != "" ]]; then
+        LINE="$DATE $LINE"
+    fi
 fi
 
-if [[ "$LINE" != "" ]] ; then
+# Restore priority
+if [[ "$PRIORITY" != "" ]]; then
+    LINE="($PRIORITY) $LINE"
+fi
+
+# Complete original task and add repeated task
+if [[ "$LINE" != "" ]]; then
     $DO && "$TODO_SH" command do "$ITEM"
     $DO && "$TODO_SH" command add "$LINE"
 fi
+
