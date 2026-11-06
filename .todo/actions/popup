@@ -1,0 +1,26 @@
+#!/bin/bash
+# @file todo-popup.sh
+# @author Cody Sork <codysork@gmail.com> with help from ChatGPT
+# @created 2026-11-05
+# @modified 2026-11-15
+# @purpose Add a task to todo.txt using a graphical popup.
+
+TODO_SH="todo.sh"
+
+# Request task description
+task=$(kdialog \
+    --title "Add Todo Task" \
+    --inputbox "Enter a new task:")
+
+# Exit if cancelled or empty
+if [[ $? -ne 0 || -z "$task" ]]; then
+    exit 0
+fi
+
+# Add task
+if "$TODO_SH" add "$task"; then
+    notify-send "Todo" "Task added: $task"
+else
+    notify-send -u critical "Todo" "Failed to add task."
+    exit 1
+fi
