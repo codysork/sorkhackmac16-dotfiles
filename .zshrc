@@ -82,14 +82,16 @@ plugins=(
 )
 
 source $ZSH/oh-my-zsh.sh
-export TODO_FILE="~/Sync/Todo/todo.txt"
+export BOOKMARK_FILE="$HOME/Sync/Bookmarks/bookmarks.txt"
+export TODO_FILE="$HOME/Sync/Todo/todo.txt"
 
 # Zoxide
 eval "$(zoxide init zsh)"
 
 # Aliases
+alias bookmarkedit='nvim  ${BOOKMARK_FILE}'
 alias todo='todo.sh -d ~/.todo.cfg'
-alias todoedit="nvim ${TODO_FILE}"
+alias todoedit='nvim ${TODO_FILE}'
 alias vim='nvim'
 
 eval $(thefuck --alias)
