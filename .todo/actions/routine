@@ -1,0 +1,285 @@
+#!/usr/bin/env bash
+# 
+# @author Cody Sork <codysork@gmail.com> with help from ChatGPT
+# @created 2026-11-08
+# @modified 2026-11-08
+# @ description List and reschedule tasks tagged with @Routine and a recurrence context,
+#               or with a combined @Routine:<frequency> context.
+#
+# Monthly scheduling selectors:
+#   @day:15
+#   @first-wednesday ... @fifth-sunday
+#   @last-monday ... @last-sunday
+
+action=$2
+shift
+item=$2
+shift
+param="$*"
+
+Routines='daily weekly monthly quarterly yearly irregular'
+
+function usage {
+    cat <<EOF
+  $(basename "$0") {daily|weekly|monthly|quarterly|yearly|irregular} [do [<item> [<weekday>|<date>]]]
+    List tasks in a Routine, or complete and reschedule them.
+
+    Examples:
+      \$ $TODO_SH Routine daily
+      \$ $TODO_SH Routine daily do
+      \$ $TODO_SH Routine weekly do monday
+      \$ $TODO_SH Routine weekly do 42
+      \$ $TODO_SH Routine weekly do 42 monday
+      \$ $TODO_SH Routine monthly do
+      \$ $TODO_SH Routine irregular do 42 2026-11-15
+
+    Task tags:
+      @Routine @daily
+      @Routine:daily
+
+    Monthly scheduling tags:
+      @day:15
+      @first-wednesday through @fifth-sunday
+      @last-monday through @last-sunday
+
+    Yearly Routines are rescheduled for January 1 of the next year.
+EOF
+}
+
+function fail {
+    echo "Routine: $*" >&2
+    exit 1
+}
+
+function has_token {
+    local text=$1 token=$2
+    [[ " $text " =~ [[:space:]]${token}([[:space:]]|$) ]]
+}
+
+function is_Routine_task {
+    local text=$1
+    [[ "$text" == x\ * ]] && return 1
+
+    if has_token "$text" "@Routine:$action"; then
+        return 0
+    fi
+
+    has_token "$text" '@Routine' && has_token "$text" "@$action"
+}
+
+function list {
+    local number=0 task
+    while IFS= read -r task || [[ -n "$task" ]]; do
+        ((number += 1))
+        if is_Routine_task "$task"; then
+            printf '%s %s\n' "$number" "$task"
+        fi
+    done < "$TODO_FILE"
+}
+
+function weekday_number {
+    case "${1,,}" in
+        monday|mon)    echo 1 ;;
+        tuesday|tue)   echo 2 ;;
+        wednesday|wed) echo 3 ;;
+        thursday|thu)  echo 4 ;;
+        friday|fri)    echo 5 ;;
+        saturday|sat)  echo 6 ;;
+        sunday|sun)    echo 7 ;;
+        *) return 1 ;;
+    esac
+}
+
+function valid_date {
+    [[ "$1" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || return 1
+    [[ "$(date -d "$1" +%F 2>/dev/null)" == "$1" ]]
+}
+
+function next_date {
+    local task=$1 override=$2 today month_start next_month last_day
+    local day target current offset ordinal weekday last_date last_weekday year
+
+    today=$(date +%F) || return 1
+
+    case "$action" in
+        daily)
+            date -d "$today + 1 day" +%F
+            ;;
+        weekly)
+            if [[ -n "$override" ]]; then
+                target=$(weekday_number "$override") || return 1
+                current=$(date -d "$today" +%u) || return 1
+                offset=$(((target - current + 7) % 7))
+                ((offset == 0)) && offset=7
+                date -d "$today + $offset days" +%F
+            else
+                date -d "$today + 7 days" +%F
+            fi
+            ;;
+        monthly)
+            month_start=$(date -d "$today" +%Y-%m-01) || return 1
+            next_month=$(date -d "$month_start + 1 month" +%Y-%m-01) || return 1
+            last_day=$(date -d "$next_month + 1 month - 1 day" +%-d) || return 1
+
+            if [[ "$task" =~ (^|[[:space:]])@day:([0-9]{1,2})([[:space:]]|$) ]]; then
+                day=$((10#${BASH_REMATCH[2]}))
+                ((day >= 1 && day <= 31)) || return 1
+                ((day > last_day)) && day=$last_day
+                printf '%s-%02d\n' "${next_month:0:7}" "$day"
+                return
+            fi
+
+            if [[ "$task" =~ (^|[[:space:]])@(first|second|third|fourth|fifth|last)-(monday|tuesday|wednesday|thursday|friday|saturday|sunday)([[:space:]]|$) ]]; then
+                ordinal=${BASH_REMATCH[2]}
+                weekday=${BASH_REMATCH[3]}
+                target=$(weekday_number "$weekday") || return 1
+
+                if [[ "$ordinal" == last ]]; then
+                    last_date=$(date -d "$next_month + 1 month - 1 day" +%F) || return 1
+                    last_weekday=$(date -d "$last_date" +%u) || return 1
+                    offset=$(((last_weekday - target + 7) % 7))
+                    date -d "$last_date - $offset days" +%F
+                else
+                    case "$ordinal" in
+                        first) ordinal=1 ;;
+                        second) ordinal=2 ;;
+                        third) ordinal=3 ;;
+                        fourth) ordinal=4 ;;
+                        fifth) ordinal=5 ;;
+                    esac
+                    current=$(date -d "$next_month" +%u) || return 1
+                    offset=$(((target - current + 7) % 7 + (ordinal - 1) * 7))
+                    ((offset < last_day)) || return 1
+                    date -d "$next_month + $offset days" +%F
+                fi
+                return
+            fi
+
+            # Without a selector, repeat on the same day of the next month.
+            day=$(date -d "$today" +%-d) || return 1
+            ((day > last_day)) && day=$last_day
+            printf '%s-%02d\n' "${next_month:0:7}" "$day"
+            ;;
+        quarterly)
+            month_start=$(date -d "$today" +%Y-%m-01) || return 1
+            next_month=$(date -d "$month_start + 3 months" +%Y-%m-01) || return 1
+            last_day=$(date -d "$next_month + 1 month - 1 day" +%-d) || return 1
+            day=$(date -d "$today" +%-d) || return 1
+            ((day > last_day)) && day=$last_day
+            printf '%s-%02d\n' "${next_month:0:7}" "$day"
+            ;;
+        yearly)
+            year=$(date +%Y) || return 1
+            printf '%04d-01-01\n' "$((10#$year + 1))"
+            ;;
+        irregular)
+            if [[ -n "$override" ]]; then
+                valid_date "$override" || return 1
+                printf '%s\n' "$override"
+            else
+                printf '%s\n' "$today"
+            fi
+            ;;
+    esac
+}
+
+function update_task_date {
+    local task=$1 scheduled=$2
+    if [[ "$task" =~ (^|[[:space:]])t:[0-9]{4}-[0-9]{2}-[0-9]{2}([[:space:]]|$) ]]; then
+        task=$(printf '%s\n' "$task" | sed -E "s/(^|[[:space:]])t:[0-9]{4}-[0-9]{2}-[0-9]{2}([[:space:]]|$)/\\1t:$scheduled\\2/")
+    else
+        task="$task t:$scheduled"
+    fi
+    printf '%s\n' "$task"
+}
+
+function complete_task {
+    local number=$1 override=$2 task scheduled replacement
+
+    task=$(sed -n "${number}p" "$TODO_FILE")
+    [[ -n "$task" ]] || fail "no task numbered $number"
+    is_Routine_task "$task" || fail "task $number is not a $action Routine"
+
+    scheduled=$(next_date "$task" "$override") ||
+        fail "could not calculate the next date for task $number; check its scheduling tag"
+    replacement=$(update_task_date "$task" "$scheduled")
+
+    # Use todo.sh for both operations so its normal completion, archive,
+    # configuration, and add-on behavior remain in effect.
+    "$TODO_FULL_SH" do "$number" || fail "could not complete task $number"
+    "$TODO_FULL_SH" -T add "$replacement" || fail "could not recreate task $number"
+
+    echo "Rescheduled task $number for $scheduled."
+}
+
+[ "$action" = usage ] && usage
+[ "$action" = help ] && usage
+
+[[ " $Routines " == *" $action "* ]] || fail "unknown Routine '$action' (use: $TODO_SH Routine usage)"
+
+if [[ -z "$item" ]]; then
+    list
+    exit 0
+fi
+
+[[ "$item" == do ]] || fail "expected 'do' after Routine name"
+
+# The remaining arguments are: [task_number] [weekday|date].
+read -r -a args <<< "$param"
+task_number=
+override=
+
+if [[ ${args[0]:-} =~ ^[0-9]+$ ]]; then
+    task_number=${args[0]}
+    args=("${args[@]:1}")
+fi
+
+((${#args[@]} <= 1)) || fail 'too many arguments'
+override=${args[0]:-}
+
+case "$action" in
+    weekly)
+        if [[ -n "$override" ]]; then
+            weekday_number "$override" >/dev/null || fail "invalid weekday '$override'"
+            override=${override,,}
+        fi
+        ;;
+    irregular)
+        if [[ -n "$override" ]]; then
+            valid_date "$override" || fail "invalid date '$override' (expected YYYY-MM-DD)"
+        fi
+        ;;
+    *)
+        [[ -z "$override" ]] || fail "an optional weekday/date is not supported for $action Routines"
+        ;;
+esac
+
+if [[ -n "$task_number" ]]; then
+    complete_task "$task_number" "$override"
+    exit 0
+fi
+
+# Batch mode: ask separately for every matching task. Process accepted tasks
+# in descending line-number order so completing one cannot renumber another.
+declare -a selected=()
+number=0
+while IFS= read -r -u 3 task || [[ -n "$task" ]]; do
+    ((number += 1))
+    if is_Routine_task "$task"; then
+        printf '%s %s\n' "$number" "$task"
+        answer=
+        read -r -p "Complete and reschedule task $number? (y/N) " answer || answer=
+        case "$answer" in
+            y|Y|yes|YES|Yes) selected+=("$number") ;;
+        esac
+    fi
+done 3< "$TODO_FILE"
+
+((${#selected[@]})) || {
+    echo 'No tasks selected.'
+    exit 0
+}
+
+for ((i=${#selected[@]} - 1; i >= 0; i--)); do
+    complete_task "${selected[i]}" "$override"
+done
