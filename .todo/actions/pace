@@ -62,7 +62,7 @@ days_between() {
 print_header() {
     echo
     printf '%-16s %10s %8s %12s\n' \
-        "Period" "Points" "Days" "SP/day"
+        "Period" "Points" "Days" "Effort/day"
     printf '%-16s %10s %8s %12s\n' \
         "----------------" "----------" "--------" "------------"
 }
