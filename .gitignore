@@ -26,6 +26,7 @@
 .oh-my-zsh/
 .pki/
 .rustup/
+.secret/
 .ssh/
 .steam/
 .supermaven/
