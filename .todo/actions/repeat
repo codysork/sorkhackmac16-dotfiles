@@ -1,84 +1,145 @@
-
 #!/bin/bash
 #
 # @file repeat (todo.sh action)
 # @author Mark D. White (edited by Cody Sork <codysork@gmail.com> with help from ChatGPT)
 # @created 2011-11-16
-# @modified 2026-11-05
+# @modified 2026-11-19
 # @description An addon command for todo.txt-cli that marks an item done and 
-#              immediately re-enters it.
+#              immediately re-enters it, optionally rescheduling its threshold date.
 
-action=$1
-shift
+TODO_CMD="${TODO_FULL_SH:-${TODO_SH:-todo.sh}}"
 
 function usage {
     echo " Customized repeat:"
     echo "   repeat ITEM"
     echo "     mark an item complete then re-enter it"
-    echo "   repeat ITEM DAYS"
-    echo "     mark an item complete then re-enter it with a date DAYS from now"
-    echo "   repeat ITEM +DAYS"
-    echo "     mark an item with a date complete then re-enter it with a date DAYS from the due date"
+    echo "   repeat ITEM [DATE|DAY]"
+    echo "     mark an item complete then re-enter it, rescheduling"
+    echo "     its threshold date to DATE or DAY (just like todo schedule)"
     echo ""
     exit
 }
 
-[ "$action" = "usage" ] && usage
+function is_schedule_installed {
+    local this_dir
+    this_dir=$(dirname "$0")
+    local actions_dirs="${TODO_ACTIONS_DIR:-$HOME/.todo/actions:$HOME/.todo.actions.d:${XDG_CONFIG_HOME:-$HOME/.config}/todo/actions}"
+    local dir
+    local old_ifs=$IFS
+    IFS=':'
+    for dir in "$this_dir" $actions_dirs; do
+        [ -z "$dir" ] && continue
+        if [ -x "$dir/schedule" ] || [ -x "$dir/schedule/schedule" ]; then
+            IFS=$old_ifs
+            return 0
+        fi
+    done
+    IFS=$old_ifs
+    return 1
+}
 
-# Make sure we have an item number
+function normalize_target_date {
+    local input=$1
+    if [[ "$input" =~ ^[0-9]+$ ]]; then
+        echo "${input} days"
+    elif [[ "$input" =~ ^\+[0-9]+$ ]]; then
+        echo "${input#+} days"
+    else
+        echo "$input"
+    fi
+}
+
+function validate_target_date {
+    local target_date=$1
+    [ -z "$target_date" ] && return 0
+
+    if ! is_schedule_installed; then
+        echo "Error: 'schedule' action is not installed." >&2
+        exit 1
+    fi
+
+    local test_date=$target_date
+    [[ "$test_date" == mv* ]] && test_date="${test_date#mv }"
+
+    if ! date -d "$test_date" +%F >/dev/null 2>&1; then
+        date -d "$test_date" +%F
+        exit 1
+    fi
+}
+
+function prepare_task_line {
+    local line=$1
+    local priority=""
+
+    if [[ "$line" == \([A-Za-z]\)\ * ]]; then
+        priority="${line:1:1}"
+        priority="${priority^^}"
+        line="${line:4}"
+    fi
+
+    if [[ "$line" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\  ]]; then
+        line="${line#* }"
+    fi
+
+    if [ -n "$priority" ]; then
+        line="($priority) $line"
+    fi
+
+    echo "$line"
+}
+
+function repeat_task {
+    local item=$1
+    local line=$2
+    local target_date=$3
+
+    [ -z "$line" ] && return 0
+    [ -n "$DO" ] && ! $DO && return 0
+
+    "$TODO_CMD" command do "$item" || exit $?
+    "$TODO_CMD" command add "$line" || exit $?
+
+    [ -z "$target_date" ] && return 0
+
+    local new_item
+    new_item=$(sed -n '$ =' "$TODO_FILE")
+    "$TODO_CMD" schedule "$new_item" "$target_date" || exit $?
+}
+
+# --- Main ---
+
+action=$1
+shift
+
+[ "$action" = "usage" ] || [ "$action" = "help" ] && usage
+
 ITEM=$1
+shift || true
+PARAM="$*"
+
+case "$ITEM" in
+    usage|help|-h|--help)
+        usage
+        ;;
+esac
 
 if ! [[ "$ITEM" =~ ^[0-9]+$ ]]; then
     echo "Error! Usage:"
     usage
 fi
 
-# Pull the line from the todo file
 LINE=$(sed "$ITEM!d" "$TODO_FILE")
-
-# Preserve priority
-PRIORITY=""
-
-if [[ "$LINE" == \([A-Z]\)\ * ]]; then
-    PRIORITY=${LINE:1:1}
-    LINE=${LINE:4}
+if [ -z "$LINE" ]; then
+    echo "TODO: No task $ITEM."
+    exit 1
 fi
 
-# Identify and remove the date
-if [[ "$LINE" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}\  ]]; then
-    DATE=${LINE%% *}
-    LINE=${LINE#* }
-else
-    DATE=""
+TARGET_DATE=""
+if [ -n "$PARAM" ]; then
+    TARGET_DATE=$(normalize_target_date "$PARAM")
+    validate_target_date "$TARGET_DATE"
 fi
 
-# Process optional DAYS argument
-DAYS=$2
+CLEAN_LINE=$(prepare_task_line "$LINE")
 
-if [[ "$DAYS" != "" ]]; then
-    if [[ "$DAYS" == +* ]]; then
-        if [[ "$DATE" != "" ]]; then
-            # Increase the due date
-            DATE=$(date -d "$DATE $DAYS days" +%Y-%m-%d)
-        fi
-    elif [[ "$DAYS" =~ ^[0-9]+$ ]]; then
-        # Make new date relative from now
-        DATE=$(date -d "$DAYS days" +%Y-%m-%d)
-    fi
-
-    if [[ "$DATE" != "" ]]; then
-        LINE="$DATE $LINE"
-    fi
-fi
-
-# Restore priority
-if [[ "$PRIORITY" != "" ]]; then
-    LINE="($PRIORITY) $LINE"
-fi
-
-# Complete original task and add repeated task
-if [[ "$LINE" != "" ]]; then
-    $DO && "$TODO_SH" command do "$ITEM"
-    $DO && "$TODO_SH" command add "$LINE"
-fi
-
+repeat_task "$ITEM" "$CLEAN_LINE" "$TARGET_DATE"

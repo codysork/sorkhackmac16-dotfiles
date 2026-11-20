@@ -10,13 +10,17 @@ action=$1
 shift
 
 [ "$action" = "usage" ] && {
-    echo "  Today's view: displays today's tasks"
-    echo "    today"
-    echo "      Shows tasks timed for today which are listed as t:YYYY-MM-DD"
+    echo "  Today's view: displays today's and overdue tasks"
+    echo "    today [TERM...]"
+    echo "      Shows tasks with a threshold date on or before today (t:YYYY-MM-DD)"
     exit
 }
 
-TODAY_LIST=$(_list "$TODO_FILE" "t:$(date +%Y-%m-%d)")
+today=$(date +%Y-%m-%d)
+awk_filter="awk -v today='$today' 'match(\$0, /t:[0-9]{4}-[0-9]{2}-[0-9]{2}/) { d = substr(\$0, RSTART + 2, 10); if (d <= today) print }'"
+post_filter_command="${post_filter_command:-}${post_filter_command:+ | }${awk_filter}"
+
+TODAY_LIST=$(_list "$TODO_FILE" "$@")
 if [ -n "${TODAY_LIST}" ]; then
     echo "==================================="
     echo "Tasks for today:"

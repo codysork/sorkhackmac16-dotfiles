@@ -25,13 +25,13 @@ function usage {
     List tasks in a Routine, or complete and reschedule them.
 
     Examples:
-      \$ $TODO_SH Routine daily
-      \$ $TODO_SH Routine daily do
-      \$ $TODO_SH Routine weekly do monday
-      \$ $TODO_SH Routine weekly do 42
-      \$ $TODO_SH Routine weekly do 42 monday
-      \$ $TODO_SH Routine monthly do
-      \$ $TODO_SH Routine irregular do 42 2026-11-15
+      \$ $TODO_SH routine daily
+      \$ $TODO_SH routine daily do
+      \$ $TODO_SH routine weekly do monday
+      \$ $TODO_SH routine weekly do 42
+      \$ $TODO_SH routine weekly do 42 monday
+      \$ $TODO_SH routine monthly do
+      \$ $TODO_SH routine irregular do 42 2026-11-15
 
     Task tags:
       @Routine @daily

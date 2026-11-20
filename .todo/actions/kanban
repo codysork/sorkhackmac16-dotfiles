@@ -1,0 +1,82 @@
+#!/bin/bash
+# @file kanban
+# @author Cody Sork <codysork@gmail.com> with help from ChatGPT
+# @created 2026-10-31
+# @modified 2026-10-31
+# @purpose This script creates a kanban board for todo items in todo.txt
+
+set -Eeuo pipefail
+
+action=$1
+shift
+
+#==============================================================================
+# Configuration
+#==============================================================================
+
+CONTEXTS=(
+    "@Todo"
+    "@Doing"
+)
+
+#------------------------------------------------------------------------------
+# Constants
+#------------------------------------------------------------------------------
+
+HEADER_HEIGHT=3
+
+#------------------------------------------------------------------------------
+# Helper Functions
+#------------------------------------------------------------------------------
+
+# @purpose Calculate the number of columns in the kanban board
+# @return num_columns the number of columns
+get_num_columns() {
+    local num_columns=0
+    for context in "${CONTEXTS[@]}"; do
+        num_columns=$((num_columns + 1))
+    done
+    num_columns=$((num_columns + 1)) # add backlog column
+    echo $num_columns
+}
+
+# @purpose Calculate the dimensions of each column
+# @param $1 num_columns
+# @return column_width column_height
+calculate_column_dimensions() {
+    local terminal_width=$(tput cols)
+    local num_columns=$1
+    local column_width=$((terminal_width / num_columns))
+    local terminal_height=$(tput lines)
+    local column_height=$((terminal_height - HEADER_HEIGHT))
+    echo $column_width $column_height
+}
+
+#------------------------------------------------------------------------------
+# Rendering Functions
+#------------------------------------------------------------------------------
+
+# @param $1 num_columns
+# @param $2 CONTEXTS
+# @purpose Render the header row of the kanban board
+render_header() {
+    
+}
+
+#------------------------------------------------------------------------------
+# Kanban Board
+#------------------------------------------------------------------------------
+
+draw_board() {
+    local num_columns=$(get_num_columns)
+    local column_dimensions=$(calculate_column_dimensions $num_columns)
+    local column_width=$(echo $column_dimensions | cut -d ' ' -f 1)
+    local column_height=$(echo $column_dimensions | cut -d ' ' -f 2)
+    local column_index=0
+}
+
+#------------------------------------------------------------------------------
+# Main
+#------------------------------------------------------------------------------
+
+draw_board
