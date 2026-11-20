@@ -89,10 +89,13 @@ export TODO_FILE="$HOME/Sync/Todo/todo.txt"
 eval "$(zoxide init zsh)"
 
 # Aliases
+## Overrides
+alias grep='rg'
+alias vim='nvim'
+## Personal
 alias bookmarkedit='nvim  ${BOOKMARK_FILE}'
 alias todo='todo.sh -d ~/.todo.cfg'
 alias todoedit='nvim ${TODO_FILE}'
-alias vim='nvim'
 
 eval $(thefuck --alias)
 eval "$(starship init zsh)"
