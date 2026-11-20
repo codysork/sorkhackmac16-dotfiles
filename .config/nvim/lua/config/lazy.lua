@@ -27,6 +27,9 @@ require("lazy").setup({
     -- import your plugins
     { import = "plugins" },
   },
+  git = {
+    timeout = 600, -- seconds; Lazy uses this timeout for process commands
+  },
   -- Configure any other settings here. See the documentation for more details.
   -- colorscheme that will be used when installing plugins.
   install = {},
