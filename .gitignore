@@ -16,13 +16,17 @@
 .zsh_history
 
 ## Directories
+.android/
 .cache/
 .cargo/
 .codeium/
 .config/
+.gemini/
 .gnupg/
+.gradle/
 .local/
 .minetest/
+.npm/
 .oh-my-zsh/
 .pki/
 .rustup/
