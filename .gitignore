@@ -28,12 +28,14 @@
 .minetest/
 .npm/
 .oh-my-zsh/
+.opencode/
 .pki/
 .rustup/
 .secret/
 .ssh/
 .steam/
 .supermaven/
+.todo/
 @Install/
 Code/
 Downloads/
