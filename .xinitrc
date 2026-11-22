@@ -20,11 +20,9 @@ export KDE_SESSION_VERSION=6
 xrdb -merge ~/.Xresources
 
 # Start programs
-wal -R
 exec picom --config ~/.config/picom.conf &
 exec dunst &
 exec styli.sh -w 4096 -h 2304 &
-wal -i $HOME/.cache/styli.sh/wallpaper.jpg &
 exec redshift-gtk &
 exec kdeconnect-indicator &
 
