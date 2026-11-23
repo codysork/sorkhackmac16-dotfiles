@@ -13,6 +13,9 @@
 .steampid
 .wget-hsts
 .zcompdump*
+.zimrc
+.zshrc.pre-zim
+.zhistory
 .zsh_history
 
 ## Directories
@@ -36,6 +39,8 @@
 .steam/
 .supermaven/
 .todo/
+.zhistory/
+.zim/
 @Install/
 Code/
 Downloads/
