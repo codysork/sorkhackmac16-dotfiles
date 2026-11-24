@@ -1,5 +1,13 @@
 # AGENTS.md
 
+**1. Always find the root cause of a problem.**
+**2. Keep it simple stupid; reduce complexity as much as possible.**
+**3. Work directly on the current branch, `master`; don't create new branches unless you ask.**
+**4. Don't push, merge or open pull requests without asking first.**
+**5. Verify your changes: there is no automated test suite for this repo; for shell/dotfile edits confirm they parse with `bash -n` or load.**
+**6. Commit messages: short and past-tense; keep the subject to one line where possible.**
+**7. Leave the campground cleaner than you found it.**
+
 Scope: the dotfiles repository rooted at `$HOME` (`/home/cody`).
 
 ## Clean code standards
@@ -120,3 +128,5 @@ Code is clean if it can be understood easily – by everyone on the team. Clean 
 - **Push/merge/PR:** don't push, merge or open pull requests without asking
   first. The remote is `origin`; those decisions are yours to make unless
   you specify otherwise.
+
+Most important instructions, repeated: 1. find the root cause of a problem; 2. keep it simple stupid and reduce complexity as much as possible; 3. work directly on the current branch `master` and don't create new branches unless you ask; 4. don't push, merge or open pull requests without asking first; 5. verify shell/dotfile edits by confirming they parse with `bash -n` or load; 6. keep commit messages short and past-tense, one line where possible; 7. leave the campground cleaner than you found it.
