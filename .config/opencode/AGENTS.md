@@ -23,6 +23,17 @@ only at file level. Use `# ...` in Bash/Python/config and `<!-- ... -->`
 in Markdown. In Python, place the code marker above the `def`/`class` and the
 documentation marker above its docstring when both are generated.
 
+<!-- AI-generated documentation (not reviewed by a human) -->
+## Spec conformance
+
+When a project has specs (for example `spec/*.spec.json` and its schema), treat
+them as the contract. Read the relevant spec before writing or changing code,
+and keep the code within its declared interface, effects, and exit codes. Never
+relax a spec to make non-conforming code acceptable: fix the code instead. Only
+create or update a spec when the user explicitly asks for a spec change. Verify
+conformance after changes and report any mismatch instead of silently changing
+the spec.
+
 ## Clean code standards
 
 Clean code is easy for everyone on the team to understand, read, change, extend, and maintain.

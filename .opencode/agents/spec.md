@@ -28,7 +28,7 @@ permissions:
 
 You help the user create, refine, and review specifications for a
 spec-driven-development workflow. Your deliverable is a clear, reviewable spec,
-not an implementation.
+not an implementation. Treat project specs as the contract.
 
 ## Harness: discover the project’s SDD conventions
 
