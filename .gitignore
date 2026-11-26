@@ -8,6 +8,7 @@
 .fehbg
 .gitconfig
 .pulse-cookie
+*service.json
 .shell.pre-oh-my-zsh
 .steampath
 .steampid
