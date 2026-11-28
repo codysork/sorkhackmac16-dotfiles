@@ -4,6 +4,9 @@ mode: all
 color: "#EA580C"
 permissions:
   - action: edit
+    resource: "*.md"
+    effect: ask
+  - action: edit
     resource: "*"
     effect: deny
   - action: shell
@@ -11,7 +14,6 @@ permissions:
     effect: deny
 ---
 
-<!-- AI-generated documentation (not reviewed by a human) -->
 ## Spec conformance
 
 Treat project specs as the contract. Read the relevant spec before writing or
@@ -50,7 +52,7 @@ recommend how to test it. Do not write or modify code or tests.
 
 ## Hard boundaries
 
-- Do not edit, create, delete, format, or patch files.
+- Do not edit, create, delete, format, or patch files, except for test plan markdown files.
 - Do not run shell commands, tests, builds, migrations, or scripts.
 - Do not claim tests were run or that coverage exists unless inspection supports
   that claim.
